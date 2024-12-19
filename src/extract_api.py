@@ -1,6 +1,36 @@
 import requests
-import csv
+import time
+from datetime import datetime
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from dotenv import load_dotenv
 import os
+
+from database import Base, BitcoinPreco
+
+
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
+
+# Lê as variáveis separadas do arquivo .env
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+
+# Cria a conexão com o banco de dados
+POSTGRES_DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+
+# Cria a engine e a sessão
+engine = create_engine(POSTGRES_DATABASE_URL)
+Session = sessionmaker(bind=engine)
+
+def criar_tabela():
+    """Cria a tabela no banco de dados, se não existir."""
+    Base.metadata.create_all(engine)
+    print("Tabela criada com sucesso!")
 
 
 def extract_dados_bitcoin():
@@ -22,25 +52,43 @@ def transform_dados_bitcoin(data):
     valor =  data["data"]["amount"]
     criptomoeda = data["data"]["base"]
     moeda = data["data"]["currency"]
+    timestamp = datetime.now()
 
     dados_transformados = {
         "valor": valor,
         "criptomoeda": criptomoeda,
-        "moeda": moeda
+        "moeda": moeda,
+        "timestamp": timestamp
     }
+
     return dados_transformados
 
-def load_dados_bitcoin(dados_transformados):
-    os.makedirs("data", exist_ok=True)
-    csv_path = "data/dados_bitcoin.csv"
-
-    with open(csv_path, mode="w", newline="") as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow(dados_transformados.keys())
-        writer.writerow(dados_transformados.values())
+def salvar_dados_postgres(dados):
+    """Salva os dados no banco PostgreSQL."""
+    session = Session()
+    novo_registro = BitcoinPreco(**dados)
+    session.add(novo_registro)
+    session.commit()
+    session.close()
+    print(f"[{dados['timestamp']}] Dados salvos no postgreSQL !")
 
 
 if __name__ == "__main__":
-    dados = extract_dados_bitcoin()
-    dados_transformados = transform_dados_bitcoin(dados)
-    salvar_dados = load_dados_bitcoin(dados_transformados)
+    criar_tabela()
+    print("Iniciando ETL com atualização a cada 15 segundos...")
+
+    while True:
+        try:
+            dados_json = extract_dados_bitcoin()
+            if  dados_json:
+                dados_tratados = transform_dados_bitcoin(dados_json)
+                print("Dados Tratados:", dados_tratados)
+                salvar_dados_postgres(dados_tratados)
+            time.sleep(15)
+        except KeyboardInterrupt:
+            print("\nProcesso interropido pelo usuário. Finalizando...")
+            break
+        except Exception as e:
+            print(f"Erro durante a execução: {e}")
+            time.sleep(15)
+
