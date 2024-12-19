@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "yt-etl-project-api-extract"
+version = "0.1.0"
+description = "Api Extract"
+authors = ["Gustavo Souza"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.12.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
