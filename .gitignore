@@ -2,3 +2,4 @@
 .env
 
 volumes-postgres/
+comandos.txt
