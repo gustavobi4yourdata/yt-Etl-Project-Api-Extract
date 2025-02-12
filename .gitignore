@@ -3,3 +3,5 @@
 
 volumes-postgres/
 comandos.txt
+
+__pycache__/
