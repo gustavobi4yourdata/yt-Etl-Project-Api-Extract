@@ -1,7 +1,9 @@
 # Extração de dados API
 
 ## Sobre o Projeto
-Este repositório faz parte de uma **LIVE do YouTube**. 
+Este repositório faz parte de uma **LIVE do YouTube**.
+
+[Link](https://www.youtube.com/watch?v=xvCwZ73muV8)
 
 
 ### Pré-requisitos
